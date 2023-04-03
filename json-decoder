@@ -1,0 +1,52 @@
+import json
+from tkinter import *
+
+# open the JSON file and load the data replace 'data.json' with the filepath to your json file
+with open('data.json') as f:
+    data = json.load(f)
+
+# create a new window
+root = Tk()
+root.title("BET ARCHIVE TRANSLATOR for Stake Casino")
+
+# calculate wins and losses
+wins = 0
+losses = 0
+for item in data:
+    if item["payoutMultiplier"] > 0:
+        wins += 1
+    else:
+        losses += 1
+
+# create a label to display the win/loss information
+win_loss_label = Label(root, text=f"Wins: {wins} Losses: {losses}", font=("Arial", 12, "bold"))
+
+# create a text widget to display the data
+text = Text(root, wrap=NONE)
+
+# create a scrollbar for the text widget
+scrollbar = Scrollbar(root, orient=VERTICAL, command=text.yview)
+text.config(yscrollcommand=scrollbar.set)
+scrollbar.pack(side=RIGHT, fill=Y)
+
+# loop through each item in the data array and extract the required fields
+for item in data:
+    # extract the required fields
+    game = item["gameName"].capitalize()
+    currency = item["currency"].upper()
+    multiX = item["payoutMultiplier"]
+    payout = item["payout"]
+    
+    # add the extracted data to the text widget
+    text.insert(END, f"Game: {game}\n")
+    text.insert(END, f"Currency: {currency}\n")
+    text.insert(END, f"multiX: {multiX}\n")
+    text.insert(END, f"Payout: {payout}\n\n")
+
+# pack the win/loss label and the text widget into the window
+win_loss_label.pack()
+text.pack(fill=BOTH, expand=YES)
+
+# display the window
+root.mainloop()
+
