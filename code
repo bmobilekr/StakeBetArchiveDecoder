@@ -1,0 +1,74 @@
+import json
+from tkinter import *
+from collections import defaultdict
+
+def analyze_game(game_choice):
+    # List of filenames to process
+    filenames = [f*.json" for i in range(1, 10)]
+    
+    # this is the path of your files and the range of the files
+    
+    # Create a new window for the results
+    root = Tk()
+
+    text = Text(root, wrap=NONE)
+    scrollbar = Scrollbar(root, orient=VERTICAL, command=text.yview)
+    text.config(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side=RIGHT, fill=Y)
+    text.tag_configure("red", foreground="red")
+
+    client_seeds_data = defaultdict(list)
+    for filename in filenames:
+        with open(filename) as f:
+            data = json.load(f)
+        for item in data:
+            if item["gameName"].capitalize() == game_choice.capitalize():
+                client_seeds_data[item.get("clientSeedId", "Unknown")].append(item)
+
+    for client_seed, data in client_seeds_data.items():
+        multiplier_counts = defaultdict(int)
+        number_counts = defaultdict(int)
+        total_amount = 0
+
+        text.insert(END, f"\nClient Seed: {client_seed}\n")
+        text.insert(END, "-" * 40 + "\n")
+
+        for item in data:
+            multiX = item["payoutMultiplier"]
+            total_amount += multiX - 1  # Subtracting the $1 bet
+            multiplier_counts[multiX] += 1
+            if game_choice.lower() == "keno":
+                numbers = item["stateKeno"]["drawnNumbers"]
+                for num in numbers:
+                    number_counts[num] += 1
+                text.insert(END, f"Numbers: {numbers}, multiX: {multiX}\n\n")
+
+        # Insert the summary in red
+        start_index = text.index("end")
+        total_rounds = sum(multiplier_counts.values())
+        text.insert('end', f"Total Rounds for {client_seed}: {total_rounds}\n", "red")
+        for multi, count in multiplier_counts.items():
+            percentage = (count / total_rounds) * 100
+            text.insert('end', f"{multi}X: {count} times ({percentage:.2f}%)\n", "red")
+        text.insert('end', f"\nTotal Win/Loss Amount for {client_seed}: ${total_amount:.2f}\n\n", "red")
+        if game_choice.lower() == "keno":
+            sorted_numbers = sorted(number_counts.items(), key=lambda x: x[1], reverse=True)
+            text.insert('end', "Top 10 Numbers for this seed:\n", "red")
+            for num, count in sorted_numbers[:10]:
+                text.insert('end', f"Number {num}: {count} times\n", "red")
+
+    text.pack(fill=BOTH, expand=YES)
+    root.mainloop()
+
+# Create a window for game selection
+selection_window = Tk()
+selection_window.title("Game Selection")
+
+# Create buttons for game choices
+keno_button = Button(selection_window, text="Analyze Keno", command=lambda: [selection_window.destroy(), analyze_game("keno")])
+plinko_button = Button(selection_window, text="Analyze Plinko", command=lambda: [selection_window.destroy(), analyze_game("plinko")])
+
+keno_button.pack(pady=20)
+plinko_button.pack(pady=20)
+
+selection_window.mainloop()
